@@ -1,4 +1,5 @@
 package com.vibecheck.VibeCheck_Backend.services;
+
 import com.vibecheck.VibeCheck_Backend.models.Aluno;
 import com.vibecheck.VibeCheck_Backend.models.Professor;
 import com.vibecheck.VibeCheck_Backend.repositories.AlunoRepository;
@@ -22,6 +23,10 @@ import java.util.Set;
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
+    public CustomOAuth2UserService() {
+        System.out.println("🚀 CustomOAuth2UserService foi carregado pelo Spring!");
+    }
+
     private static final List<String> EMAILS_PROFESSORES = List.of(
             "igornayancabj5a@gmail.com",
             "nathannmvr@gmail.com"
@@ -36,6 +41,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
+        System.out.println("🚀 Carregando usuário do OAuth2...");
+
         OAuth2User oAuth2User = super.loadUser(request);
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
@@ -43,10 +50,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String nome = (String) attributes.get("name");
         String googleId = (String) attributes.get("sub");
 
+        System.out.println("🔍 Email encontrado: " + email);
+
         Set<GrantedAuthority> authorities = new HashSet<>();
 
         if (EMAILS_PROFESSORES.contains(email.toLowerCase())) {
             authorities.add(new SimpleGrantedAuthority("ROLE_PROFESSOR"));
+            System.out.println("✅ Role atribuída: ROLE_PROFESSOR");
+
             Professor prof = professorRepository.findByGoogleId(googleId)
                     .orElse(new Professor());
 
@@ -57,6 +68,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             professorRepository.save(prof);
         } else {
             authorities.add(new SimpleGrantedAuthority("ROLE_ALUNO"));
+            System.out.println("✅ Role atribuída: ROLE_ALUNO");
+
             Aluno aluno = alunoRepository.findByGoogleId(googleId)
                     .orElse(new Aluno());
 
@@ -67,6 +80,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             alunoRepository.save(aluno);
         }
 
-        return new DefaultOAuth2User(authorities, attributes, "sub");
+        System.out.println("🔹 Autoridades do usuário: " + authorities);
+
+        return new DefaultOAuth2User(authorities, attributes, "email");
     }
 }
