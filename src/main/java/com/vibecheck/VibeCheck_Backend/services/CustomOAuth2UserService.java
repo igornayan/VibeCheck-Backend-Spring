@@ -15,17 +15,10 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
-
-    public CustomOAuth2UserService() {
-        System.out.println("🚀 CustomOAuth2UserService foi carregado pelo Spring!");
-    }
 
     private static final List<String> EMAILS_PROFESSORES = List.of(
             "igornayancabj5a@gmail.com",
@@ -41,8 +34,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
-        System.out.println("🚀 Carregando usuário do OAuth2...");
-
         OAuth2User oAuth2User = super.loadUser(request);
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
@@ -50,17 +41,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String nome = (String) attributes.get("name");
         String googleId = (String) attributes.get("sub");
 
-        System.out.println("🔍 Email encontrado: " + email);
-
         Set<GrantedAuthority> authorities = new HashSet<>();
 
-        if (EMAILS_PROFESSORES.contains(email.toLowerCase())) {
+        if (email != null && EMAILS_PROFESSORES.contains(email.toLowerCase())) {
             authorities.add(new SimpleGrantedAuthority("ROLE_PROFESSOR"));
-            System.out.println("✅ Role atribuída: ROLE_PROFESSOR");
 
-            Professor prof = professorRepository.findByGoogleId(googleId)
-                    .orElse(new Professor());
-
+            Professor prof = professorRepository.findByGoogleId(googleId).orElseGet(Professor::new);
             prof.setGoogleId(googleId);
             prof.setEmail(email);
             prof.setNome(nome);
@@ -68,19 +54,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             professorRepository.save(prof);
         } else {
             authorities.add(new SimpleGrantedAuthority("ROLE_ALUNO"));
-            System.out.println("✅ Role atribuída: ROLE_ALUNO");
 
-            Aluno aluno = alunoRepository.findByGoogleId(googleId)
-                    .orElse(new Aluno());
-
+            Aluno aluno = alunoRepository.findByGoogleId(googleId).orElseGet(Aluno::new);
             aluno.setGoogleId(googleId);
             aluno.setEmail(email);
             aluno.setNome(nome);
 
             alunoRepository.save(aluno);
         }
-
-        System.out.println("🔹 Autoridades do usuário: " + authorities);
 
         return new DefaultOAuth2User(authorities, attributes, "email");
     }
