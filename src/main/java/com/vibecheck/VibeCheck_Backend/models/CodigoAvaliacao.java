@@ -36,7 +36,7 @@ public class CodigoAvaliacao {
     @Enumerated(EnumType.STRING) // Grava o nome do enum (CHECKIN/CHECKOUT) como String no BD
     @Column(nullable = false)
     private TipoAvaliacao tipo;
-
+    
     @Column(name = "data_criacao", nullable = false)
     private LocalDateTime dataCriacao;
 

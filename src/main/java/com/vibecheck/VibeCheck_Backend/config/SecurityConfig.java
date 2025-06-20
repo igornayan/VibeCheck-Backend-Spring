@@ -24,9 +24,16 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+
                         .requestMatchers("/", "/login", "/error", "/webjars/**", "/?logout_success=true").permitAll()
                         .requestMatchers("/dashboard", "/check").hasAuthority("ROLE_PROFESSOR")
                         .requestMatchers("/aluno-home").hasAuthority("ROLE_ALUNO")
+                        .requestMatchers("/api/codigo/**").hasAuthority("ROLE_PROFESSOR")
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth -> oauth
