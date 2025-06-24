@@ -22,7 +22,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private static final List<String> EMAILS_PROFESSORES = List.of(
             "igornayancabj5a@gmail.com",
-            "nathannmvr@gmail.com"
+            "nathannmvr@gmail.com",
+            "cristinavaleriagl@gmail.com"
     );
 
     @Autowired
