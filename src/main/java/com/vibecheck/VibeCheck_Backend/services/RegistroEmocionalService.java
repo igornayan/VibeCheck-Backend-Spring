@@ -56,11 +56,8 @@ public class RegistroEmocionalService {
         return codigoRepository.findByCodigoAndAtivoTrueAndDataExpiracaoAfter(codigo, LocalDateTime.now()).isPresent();
     }
 
-    public List<DashboardRegistroDTO> getDashboardRegistros(String googleId) {
-        Aluno aluno = alunoRepository.findByGoogleId(googleId)
-                .orElseThrow(() -> new RuntimeException("Aluno não encontrado."));
-
-        List<RegistroEmocional> registros = registroRepository.findByAlunoOrderByTimestampDesc(aluno);
+    public List<DashboardRegistroDTO> getDashboardRegistros() {
+        List<RegistroEmocional> registros = registroRepository.findAllByOrderByTimestampDesc();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -73,5 +70,4 @@ public class RegistroEmocionalService {
                 ))
                 .collect(Collectors.toList());
     }
-
 }

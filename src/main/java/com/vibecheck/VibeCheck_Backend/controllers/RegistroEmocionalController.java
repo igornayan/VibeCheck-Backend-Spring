@@ -45,12 +45,10 @@ public class RegistroEmocionalController {
     }
 
     @GetMapping("/dashboard")
-    @PreAuthorize("hasRole('ALUNO')")
-    public ResponseEntity<List<DashboardRegistroDTO>> getDashboard(
-            OAuth2AuthenticationToken authentication) {
-
-        String googleId = (String) authentication.getPrincipal().getAttributes().get("sub");
-        List<DashboardRegistroDTO> registros = registroService.getDashboardRegistros(googleId);
+    @PreAuthorize("hasRole('PROFESSOR')")
+    public ResponseEntity<List<DashboardRegistroDTO>> getDashboard() {
+        List<DashboardRegistroDTO> registros = registroService.getDashboardRegistros();
         return ResponseEntity.ok(registros);
     }
+
 }
