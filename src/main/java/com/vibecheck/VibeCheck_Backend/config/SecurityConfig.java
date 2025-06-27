@@ -31,6 +31,8 @@ public class SecurityConfig {
                         .requestMatchers("/", "/login", "/error", "/webjars/**", "/?logout_success=true").permitAll()
                         .requestMatchers("/dashboard", "/check").hasAuthority("ROLE_PROFESSOR")
                         .requestMatchers("/aluno-home").hasAuthority("ROLE_ALUNO")
+                        .requestMatchers("/api/registro/**").hasAuthority("ROLE_ALUNO")
+                        .requestMatchers("/api/registro/dashboard").hasAuthority("ROLE_PROFESSOR")
                         .requestMatchers("/api/codigo/**").hasAuthority("ROLE_PROFESSOR")
                         .anyRequest().authenticated()
                 )
