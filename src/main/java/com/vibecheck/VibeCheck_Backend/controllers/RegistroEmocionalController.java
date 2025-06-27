@@ -1,5 +1,6 @@
 package com.vibecheck.VibeCheck_Backend.controllers;
 
+import com.vibecheck.VibeCheck_Backend.dtos.RegistroEmocionalDTO;
 import com.vibecheck.VibeCheck_Backend.models.RegistroEmocional;
 import com.vibecheck.VibeCheck_Backend.services.RegistroEmocionalService;
 
@@ -34,14 +35,24 @@ public class RegistroEmocionalController {
 
     @PostMapping("/registrar")
     @PreAuthorize("hasRole('ALUNO')")
-    public ResponseEntity<RegistroEmocional> registrar(
+    public ResponseEntity<RegistroEmocionalDTO> registrar(
             @RequestParam String codigo,
             @RequestParam int emocao,
             OAuth2AuthenticationToken authentication) {
 
         String googleId = (String) authentication.getPrincipal().getAttributes().get("sub");
         RegistroEmocional registro = registroService.registrarEmocao(googleId, codigo, emocao);
-        return ResponseEntity.ok(registro);
+
+        RegistroEmocionalDTO dto = new RegistroEmocionalDTO(
+                registro.getId(),
+                registro.getEmocao(),
+                registro.getCodigoAvaliacaoUsado().getTipo().name(),
+                registro.getCodigoAvaliacaoUsado().getDataCriacao().toString(),
+                registro.getCodigoAvaliacaoUsado().getProfessor().getNome(),
+                registro.getCodigoAvaliacaoUsado().getTurma().getNome()
+        );
+
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/dashboard")
