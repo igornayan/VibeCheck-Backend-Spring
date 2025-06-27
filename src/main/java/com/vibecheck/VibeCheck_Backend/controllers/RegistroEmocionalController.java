@@ -20,6 +20,13 @@ public class RegistroEmocionalController {
         this.registroService = registroService;
     }
 
+    @GetMapping("/verificar-codigo")
+    @PreAuthorize("hasRole('ALUNO')")
+    public ResponseEntity<Boolean> verificarCodigo(@RequestParam String codigo) {
+        boolean valido = registroService.verificarCodigoValido(codigo);
+        return ResponseEntity.ok(valido);
+    }
+
     @PostMapping("/checkin")
     @PreAuthorize("hasRole('ALUNO')")
     public ResponseEntity<RegistroEmocional> realizarCheckin(

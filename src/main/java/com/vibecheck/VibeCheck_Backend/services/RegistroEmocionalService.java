@@ -68,4 +68,9 @@ public class RegistroEmocionalService {
 
         return registroRepository.save(registro);
     }
+
+    public boolean verificarCodigoValido(String codigo) {
+        return codigoRepository.findByCodigoAndAtivoTrueAndDataExpiracaoAfter(codigo, LocalDateTime.now()).isPresent();
+    }
+
 }
