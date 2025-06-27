@@ -1,34 +1,52 @@
 package com.vibecheck.VibeCheck_Backend.services;
 
-import com.vibecheck.VibeCheck_Backend.models.CodigoAvaliacao;
-import com.vibecheck.VibeCheck_Backend.models.Professor;
-import com.vibecheck.VibeCheck_Backend.models.TipoAvaliacao;
+import com.vibecheck.VibeCheck_Backend.models.*;
 import com.vibecheck.VibeCheck_Backend.repositories.CodigoAvaliacaoRepository;
 import com.vibecheck.VibeCheck_Backend.repositories.ProfessorRepository;
-
+import com.vibecheck.VibeCheck_Backend.repositories.TurmaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.Random;
-
 
 @Service
 public class CodigoAvaliacaoService {
 
     private final CodigoAvaliacaoRepository codigoRepository;
     private final ProfessorRepository professorRepository;
+    private final TurmaRepository turmaRepository;
 
     @Autowired
     public CodigoAvaliacaoService(CodigoAvaliacaoRepository codigoRepository,
-                                  ProfessorRepository professorRepository) {
+                                  ProfessorRepository professorRepository,
+                                  TurmaRepository turmaRepository) {
         this.codigoRepository = codigoRepository;
         this.professorRepository = professorRepository;
+        this.turmaRepository = turmaRepository;
     }
 
-    public CodigoAvaliacao gerarCodigoCheckout(String googleId) {
+    public CodigoAvaliacao gerarCodigoCheckin(String googleId, String nomeTurma) {
+        return gerarCodigo(googleId, nomeTurma, TipoAvaliacao.CHECKIN);
+    }
+
+    public CodigoAvaliacao gerarCodigoCheckout(String googleId, String nomeTurma) {
+        return gerarCodigo(googleId, nomeTurma, TipoAvaliacao.CHECKOUT);
+    }
+
+    private CodigoAvaliacao gerarCodigo(String googleId, String nomeTurma, TipoAvaliacao tipo) {
         Professor professor = professorRepository.findByGoogleId(googleId)
                 .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
+
+        Turma turma = turmaRepository.findByNomeAndProfessor(nomeTurma, professor)
+                .orElseGet(() -> {
+                    Turma nova = new Turma();
+                    nova.setNome(nomeTurma);
+                    nova.setProfessor(professor);
+                    return turmaRepository.save(nova);
+                });
 
         CodigoAvaliacao codigo = new CodigoAvaliacao();
         codigo.setCodigo(gerarCodigoAleatorio(6));
@@ -36,23 +54,8 @@ public class CodigoAvaliacaoService {
         codigo.setDataCriacao(LocalDateTime.now());
         codigo.setDataExpiracao(LocalDateTime.now().plusMinutes(30));
         codigo.setProfessor(professor);
-        codigo.setTipo(TipoAvaliacao.CHECKOUT); // 👉 Aqui muda para CHECKOUT
-
-        return codigoRepository.save(codigo);
-    }
-
-
-    public CodigoAvaliacao gerarCodigoCheckin(String googleId) {
-        Professor professor = professorRepository.findByGoogleId(googleId)
-                .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
-
-        CodigoAvaliacao codigo = new CodigoAvaliacao();
-        codigo.setCodigo(gerarCodigoAleatorio(6));
-        codigo.setAtivo(true);
-        codigo.setDataCriacao(LocalDateTime.now());
-        codigo.setDataExpiracao(LocalDateTime.now().plusMinutes(30));
-        codigo.setProfessor(professor);
-        codigo.setTipo(TipoAvaliacao.CHECKIN);
+        codigo.setTipo(tipo);
+        codigo.setTurma(turma);
 
         return codigoRepository.save(codigo);
     }
@@ -66,4 +69,13 @@ public class CodigoAvaliacaoService {
         }
         return codigo.toString();
     }
+
+    public List<String> listarNomesPorProfessor(String googleId) {
+        Professor professor = professorRepository.findByGoogleId(googleId)
+                .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
+        return turmaRepository.findByProfessor(professor).stream()
+                .map(Turma::getNome)
+                .toList();
+    }
+
 }
