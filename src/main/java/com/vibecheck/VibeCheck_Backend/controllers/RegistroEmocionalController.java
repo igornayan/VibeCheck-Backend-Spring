@@ -9,6 +9,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import com.vibecheck.VibeCheck_Backend.dtos.DashboardRegistroDTO;
+
+import java.util.List;
+
+
 @RestController
 @RequestMapping("/api/registro")
 public class RegistroEmocionalController {
@@ -27,27 +32,25 @@ public class RegistroEmocionalController {
         return ResponseEntity.ok(valido);
     }
 
-    @PostMapping("/checkin")
+    @PostMapping("/registrar")
     @PreAuthorize("hasRole('ALUNO')")
-    public ResponseEntity<RegistroEmocional> realizarCheckin(
+    public ResponseEntity<RegistroEmocional> registrar(
             @RequestParam String codigo,
             @RequestParam int emocao,
             OAuth2AuthenticationToken authentication) {
 
         String googleId = (String) authentication.getPrincipal().getAttributes().get("sub");
-        RegistroEmocional registro = registroService.realizarCheckin(googleId, codigo, emocao);
+        RegistroEmocional registro = registroService.registrarEmocao(googleId, codigo, emocao);
         return ResponseEntity.ok(registro);
     }
 
-    @PostMapping("/checkout")
+    @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ALUNO')")
-    public ResponseEntity<RegistroEmocional> realizarCheckout(
-            @RequestParam String codigo,
-            @RequestParam int emocao,
+    public ResponseEntity<List<DashboardRegistroDTO>> getDashboard(
             OAuth2AuthenticationToken authentication) {
 
         String googleId = (String) authentication.getPrincipal().getAttributes().get("sub");
-        RegistroEmocional registro = registroService.realizarCheckout(googleId, codigo, emocao);
-        return ResponseEntity.ok(registro);
+        List<DashboardRegistroDTO> registros = registroService.getDashboardRegistros(googleId);
+        return ResponseEntity.ok(registros);
     }
 }

@@ -47,4 +47,8 @@ public class RegistroEmocional {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "codigo_avaliacao_id", nullable = false) // Qual código foi usado
     private CodigoAvaliacao codigoAvaliacaoUsado;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "turma_id", nullable = false)
+    private Turma turma;
 }

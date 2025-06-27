@@ -8,6 +8,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+import com.vibecheck.VibeCheck_Backend.dtos.DashboardRegistroDTO;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class RegistroEmocionalService {
 
@@ -25,14 +30,12 @@ public class RegistroEmocionalService {
         this.alunoRepository = alunoRepository;
     }
 
-    public RegistroEmocional realizarCheckin(String googleId, String codigo, int emocao) {
+    public RegistroEmocional registrarEmocao(String googleId, String codigo, int emocao) {
         CodigoAvaliacao codigoAvaliacao = codigoRepository
                 .findByCodigoAndAtivoTrueAndDataExpiracaoAfter(codigo, LocalDateTime.now())
                 .orElseThrow(() -> new RuntimeException("Código inválido ou expirado."));
 
-        if (codigoAvaliacao.getTipo() != TipoAvaliacao.CHECKIN) {
-            throw new RuntimeException("Este código não é para CHECKIN.");
-        }
+        TipoAvaliacao tipo = codigoAvaliacao.getTipo(); // CHECKIN ou CHECKOUT
 
         Aluno aluno = alunoRepository.findByGoogleId(googleId)
                 .orElseThrow(() -> new RuntimeException("Aluno não encontrado."));
@@ -41,36 +44,34 @@ public class RegistroEmocionalService {
         registro.setAluno(aluno);
         registro.setCodigoAvaliacaoUsado(codigoAvaliacao);
         registro.setEmocao(emocao);
-        registro.setTipoSubmissao(TipoAvaliacao.CHECKIN);
+        registro.setTipoSubmissao(tipo); // Define dinamicamente o tipo
         registro.setTimestamp(LocalDateTime.now());
+        registro.setTurma(codigoAvaliacao.getTurma());
 
         return registroRepository.save(registro);
     }
 
-    public RegistroEmocional realizarCheckout(String googleId, String codigo, int emocao) {
-        CodigoAvaliacao codigoAvaliacao = codigoRepository
-                .findByCodigoAndAtivoTrueAndDataExpiracaoAfter(codigo, LocalDateTime.now())
-                .orElseThrow(() -> new RuntimeException("Código inválido ou expirado."));
-
-        if (codigoAvaliacao.getTipo() != TipoAvaliacao.CHECKOUT) {
-            throw new RuntimeException("Este código não é para CHECKOUT.");
-        }
-
-        Aluno aluno = alunoRepository.findByGoogleId(googleId)
-                .orElseThrow(() -> new RuntimeException("Aluno não encontrado."));
-
-        RegistroEmocional registro = new RegistroEmocional();
-        registro.setAluno(aluno);
-        registro.setCodigoAvaliacaoUsado(codigoAvaliacao);
-        registro.setEmocao(emocao);
-        registro.setTipoSubmissao(TipoAvaliacao.CHECKOUT);
-        registro.setTimestamp(LocalDateTime.now());
-
-        return registroRepository.save(registro);
-    }
 
     public boolean verificarCodigoValido(String codigo) {
         return codigoRepository.findByCodigoAndAtivoTrueAndDataExpiracaoAfter(codigo, LocalDateTime.now()).isPresent();
+    }
+
+    public List<DashboardRegistroDTO> getDashboardRegistros(String googleId) {
+        Aluno aluno = alunoRepository.findByGoogleId(googleId)
+                .orElseThrow(() -> new RuntimeException("Aluno não encontrado."));
+
+        List<RegistroEmocional> registros = registroRepository.findByAlunoOrderByTimestampDesc(aluno);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        return registros.stream()
+                .map(r -> new DashboardRegistroDTO(
+                        r.getTimestamp().format(formatter),
+                        r.getEmocao(),
+                        r.getTipoSubmissao().name(),
+                        r.getTurma().getNome()
+                ))
+                .collect(Collectors.toList());
     }
 
 }

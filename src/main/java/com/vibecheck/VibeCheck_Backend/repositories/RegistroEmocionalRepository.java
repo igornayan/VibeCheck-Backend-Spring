@@ -24,4 +24,6 @@ public interface RegistroEmocionalRepository extends JpaRepository<RegistroEmoci
 
     // Encontra todos os registros de um tipo específico dentro de um período de tempo
     List<RegistroEmocional> findByTipoSubmissaoAndTimestampBetween(TipoAvaliacao tipoSubmissao, LocalDateTime inicio, LocalDateTime fim);
+
+    List<RegistroEmocional> findByAlunoOrderByTimestampDesc(Aluno aluno);
 }
