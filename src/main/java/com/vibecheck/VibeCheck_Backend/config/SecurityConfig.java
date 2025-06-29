@@ -42,7 +42,6 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutSuccessHandler((request, response, authentication) -> {
                             System.out.println("✅ Usuário fez logout.");
-                            response.sendRedirect("http://localhost:3000/login");
                         })
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
