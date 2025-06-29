@@ -1,9 +1,11 @@
 package com.vibecheck.VibeCheck_Backend.controllers;
 
+import com.vibecheck.VibeCheck_Backend.dtos.DashboardRegistroDTO;
 import com.vibecheck.VibeCheck_Backend.dtos.LiberarCodigoRequest;
 import com.vibecheck.VibeCheck_Backend.dtos.CodigoAvaliacaoResponseDTO;
 import com.vibecheck.VibeCheck_Backend.models.CodigoAvaliacao;
 import com.vibecheck.VibeCheck_Backend.services.CodigoAvaliacaoService;
+import com.vibecheck.VibeCheck_Backend.services.RegistroEmocionalService;
 import com.vibecheck.VibeCheck_Backend.services.TurmaService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +21,18 @@ import java.util.List;
 public class CodigoAvaliacaoController {
 
     private final CodigoAvaliacaoService codigoService;
+    private final RegistroEmocionalService registroService;
 
     @Autowired
     private TurmaService turmaService;
 
     @Autowired
-    public CodigoAvaliacaoController(CodigoAvaliacaoService codigoService) {
+    public CodigoAvaliacaoController(
+            CodigoAvaliacaoService codigoService,
+            RegistroEmocionalService registroService
+    ) {
         this.codigoService = codigoService;
+        this.registroService = registroService;
     }
 
     @PostMapping("/liberar-checkin")
@@ -56,5 +63,12 @@ public class CodigoAvaliacaoController {
         String googleId = (String) authentication.getPrincipal().getAttributes().get("sub");
         List<String> nomes = turmaService.listarNomesPorProfessor(googleId);
         return ResponseEntity.ok(nomes);
+    }
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("hasRole('PROFESSOR')")
+    public ResponseEntity<List<DashboardRegistroDTO>> getDashboard() {
+        List<DashboardRegistroDTO> registros = registroService.getDashboardRegistros();
+        return ResponseEntity.ok(registros);
     }
 }

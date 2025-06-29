@@ -55,11 +55,4 @@ public class RegistroEmocionalController {
         return ResponseEntity.ok(dto);
     }
 
-    @GetMapping("/dashboard")
-    @PreAuthorize("hasRole('PROFESSOR')")
-    public ResponseEntity<List<DashboardRegistroDTO>> getDashboard() {
-        List<DashboardRegistroDTO> registros = registroService.getDashboardRegistros();
-        return ResponseEntity.ok(registros);
-    }
-
 }
