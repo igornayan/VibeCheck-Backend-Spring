@@ -7,6 +7,7 @@ import com.vibecheck.VibeCheck_Backend.models.CodigoAvaliacao;
 import com.vibecheck.VibeCheck_Backend.services.CodigoAvaliacaoService;
 import com.vibecheck.VibeCheck_Backend.services.RegistroEmocionalService;
 import com.vibecheck.VibeCheck_Backend.services.TurmaService;
+import com.vibecheck.VibeCheck_Backend.dtos.TurmaDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -59,10 +60,10 @@ public class CodigoAvaliacaoController {
 
     @GetMapping("/turmas")
     @PreAuthorize("hasRole('PROFESSOR')")
-    public ResponseEntity<List<String>> listarTurmas(OAuth2AuthenticationToken authentication) {
+    public ResponseEntity<List<TurmaDTO>> listarTurmas(OAuth2AuthenticationToken authentication) {
         String googleId = (String) authentication.getPrincipal().getAttributes().get("sub");
-        List<String> nomes = turmaService.listarNomesPorProfessor(googleId);
-        return ResponseEntity.ok(nomes);
+        List<TurmaDTO> turmas = turmaService.listarTurmasComIdPorProfessor(googleId);
+        return ResponseEntity.ok(turmas);
     }
 
     @GetMapping("/dashboard")
