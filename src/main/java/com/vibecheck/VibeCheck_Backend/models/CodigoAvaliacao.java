@@ -2,6 +2,7 @@ package com.vibecheck.VibeCheck_Backend.models;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.List;
 
 import java.time.LocalDateTime;
 
@@ -40,4 +41,7 @@ public class CodigoAvaliacao {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "turma_id", nullable = false)
     private Turma turma;
+
+    @OneToMany(mappedBy = "codigoAvaliacaoUsado")
+    private List<RegistroEmocional> registros;
 }

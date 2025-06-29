@@ -55,10 +55,12 @@ public class TurmaService {
     }
 
     public void excluirTurma(Long id) {
-        if (!turmaRepository.existsById(id)) {
-            throw new RuntimeException("Turma não encontrada");
-        }
+        Turma turma = turmaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Turma não encontrada."));
 
-        turmaRepository.deleteById(id);
+        if (turma.getCodigos().stream().anyMatch(c -> !c.getRegistros().isEmpty())) {
+            throw new RuntimeException("A turma possui registros emocionais associados e não pode ser excluída.");
+        }
+        turmaRepository.delete(turma);
     }
 }
