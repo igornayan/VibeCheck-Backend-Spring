@@ -29,10 +29,9 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers("/", "/login", "/error", "/webjars/**", "/?logout_success=true").permitAll()
-                        .requestMatchers("/dashboard", "/check").hasAuthority("ROLE_PROFESSOR")
-                        .requestMatchers("/aluno-home").hasAuthority("ROLE_ALUNO")
                         .requestMatchers("/api/registro/**").hasAuthority("ROLE_ALUNO")
                         .requestMatchers("/api/codigo/**").hasAuthority("ROLE_PROFESSOR")
+                        .requestMatchers("/api/turmas/**").hasAuthority("ROLE_PROFESSOR")
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth -> oauth

@@ -17,31 +17,15 @@ import java.util.stream.Collectors;
 @Controller
 public class HomeController {
 
-    // NOVO MÉTODO PARA LIDAR COM /login
     @GetMapping("/login")
     public RedirectView triggerGoogleLogin() {
         return new RedirectView("/oauth2/authorization/google");
-    }
-
-    @GetMapping("/check-auth")
-    @ResponseBody
-    public ResponseEntity<?> checkAuth(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuário não está logado.");
-        }
-        return ResponseEntity.ok("Usuário está logado.");
     }
 
     @GetMapping("/")
     @ResponseBody
     public String publicPage() {
         return "Bem-vindo ao Vibe Check! Faça login para continuar via /login.";
-    }
-
-    @GetMapping("/dashboard")
-    @ResponseBody
-    public String dashboard() {
-        return "Bem-vindo ao painel do professor!";
     }
 
     @GetMapping("/user/details")

@@ -32,4 +32,20 @@ public class TurmaService {
                 .map(Turma::getNome)
                 .collect(Collectors.toList());
     }
+
+    public void atualizarNomeTurma(Long id, String novoNome) {
+        Turma turma = turmaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Turma não encontrada"));
+
+        turma.setNome(novoNome);
+        turmaRepository.save(turma);
+    }
+
+    public void excluirTurma(Long id) {
+        if (!turmaRepository.existsById(id)) {
+            throw new RuntimeException("Turma não encontrada");
+        }
+
+        turmaRepository.deleteById(id);
+    }
 }
