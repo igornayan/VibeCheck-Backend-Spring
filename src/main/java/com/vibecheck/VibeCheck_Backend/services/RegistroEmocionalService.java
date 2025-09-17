@@ -1,28 +1,21 @@
-// Define o pacote para as classes de serviço.
 package com.vibecheck.VibeCheck_Backend.services;
 
-// Importações de modelos, repositórios, DTOs e outras utilidades.
 import com.vibecheck.VibeCheck_Backend.models.*;
 import com.vibecheck.VibeCheck_Backend.repositories.*;
-
+import com.vibecheck.VibeCheck_Backend.dtos.DashboardRegistroDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-
-import com.vibecheck.VibeCheck_Backend.dtos.DashboardRegistroDTO;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @Service: Marca a classe como um componente de serviço do Spring,
- * contendo a lógica de negócio da aplicação.
- */
 @Service
 public class RegistroEmocionalService {
 
-    // Injeção dos repositórios necessários.
     private final RegistroEmocionalRepository registroRepository;
     private final CodigoAvaliacaoRepository codigoRepository;
     private final AlunoRepository alunoRepository;
@@ -38,68 +31,68 @@ public class RegistroEmocionalService {
     }
 
     /**
-     * Orquestra o processo de registrar uma nova emoção.
-     * @param googleId O ID do aluno que está fazendo o registro.
-     * @param codigo O código de avaliação que está sendo usado.
-     * @param emocao O valor da emoção.
-     * @return O objeto RegistroEmocional que foi salvo no banco.
+     * Método que verifica se um código de avaliação é válido (está ativo e não expirado).
+     *
+     * @param codigo Código de avaliação
+     * @return Verdadeiro se o código for válido, falso caso contrário.
      */
+    @Cacheable(value = "registroEmocional", key = "'dashboard'")
+    public boolean verificarCodigoValido(String codigo) {
+        return codigoRepository.findByCodigoAndAtivoTrueAndDataExpiracaoAfter(codigo, LocalDateTime.now()).isPresent();
+    }
+
+    /**
+     * Método para registrar uma emoção de um aluno, associando o código de avaliação.
+     *
+     * @param googleId ID do aluno.
+     * @param codigo   Código de avaliação.
+     * @param emocao   Valor da emoção registrada.
+     * @return O objeto `RegistroEmocional` recém-criado.
+     */
+    @CacheEvict(value = "registroEmocional", key = "'dashboard'") // Limpa o cache da dashboard quando um novo registro for feito
     public RegistroEmocional registrarEmocao(String googleId, String codigo, int emocao) {
-        // 1. Valida o código: verifica se ele existe, está ativo e não expirou.
-        // Se não for válido, lança uma exceção, interrompendo o processo.
         CodigoAvaliacao codigoAvaliacao = codigoRepository
                 .findByCodigoAndAtivoTrueAndDataExpiracaoAfter(codigo, LocalDateTime.now())
                 .orElseThrow(() -> new RuntimeException("Código inválido ou expirado."));
 
-        // 2. Extrai o tipo de avaliação (CHECKIN/CHECKOUT) do código validado.
         TipoAvaliacao tipo = codigoAvaliacao.getTipo();
 
-        // 3. Encontra o aluno no banco de dados usando o googleId.
         Aluno aluno = alunoRepository.findByGoogleId(googleId)
                 .orElseThrow(() -> new RuntimeException("Aluno não encontrado."));
 
-        // 4. Cria e popula o novo objeto de registro com todos os dados necessários.
         RegistroEmocional registro = new RegistroEmocional();
         registro.setAluno(aluno);
         registro.setCodigoAvaliacaoUsado(codigoAvaliacao);
         registro.setEmocao(emocao);
         registro.setTipoSubmissao(tipo);
         registro.setTimestamp(LocalDateTime.now());
-        // Inclui a turma diretamente para otimizar futuras consultas (denormalização).
         registro.setTurma(codigoAvaliacao.getTurma());
 
-        // 5. Salva o registro no banco de dados e o retorna.
+        // Salva o registro no banco de dados
         return registroRepository.save(registro);
     }
 
     /**
-     * Um método simples de validação que retorna um booleano.
-     * Ideal para um endpoint de API que apenas verifica se um código é válido.
+     * Prepara os dados para o dashboard, retornando uma lista de DTOs com as informações
+     * formatadas de forma adequada.
+     *
+     * @return Lista de `DashboardRegistroDTO` com os registros emocionais formatados.
      */
-    public boolean verificarCodigoValido(String codigo) {
-        // Reutiliza a mesma consulta complexa e apenas verifica se um resultado foi encontrado.
-        return codigoRepository.findByCodigoAndAtivoTrueAndDataExpiracaoAfter(codigo, LocalDateTime.now()).isPresent();
-    }
-
-    /**
-     * Prepara os dados para serem exibidos no dashboard.
-     * @return Uma lista de DTOs formatados para a visualização.
-     */
+    @Cacheable(value = "registroEmocional", key = "'dashboard'") // Cache da dashboard
     public List<DashboardRegistroDTO> getDashboardRegistros() {
-        // 1. Busca todos os registros, já ordenados pelo mais recente.
+        // Busca todos os registros emocionais, já ordenados pelo mais recente
         List<RegistroEmocional> registros = registroRepository.findAllByOrderByTimestampDesc();
 
-        // 2. Define um formatador para padronizar a exibição da data e hora.
+        // Define um formatador para a exibição de data e hora
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-        // 3. Usa a API de Streams do Java para transformar a lista de entidades em uma lista de DTOs.
+        // Converte a lista de registros em uma lista de DTOs
         return registros.stream()
-                .map(r -> new DashboardRegistroDTO( // Para cada registro 'r'...
-                        r.getTimestamp().format(formatter), // ...formata a data...
-                        r.getEmocao(),                      // ...pega a emoção...
-                        r.getTipoSubmissao().name(),        // ...pega o nome do tipo...
-                        r.getTurma().getNome()              // ...e pega o nome da turma.
-                ))
-                .collect(Collectors.toList()); // Coleta tudo em uma nova lista de DTOs.
+                .map(r -> new DashboardRegistroDTO(
+                        r.getTimestamp().format(formatter),
+                        r.getEmocao(),
+                        r.getTipoSubmissao().name(),
+                        r.getTurma().getNome()))
+                .collect(Collectors.toList()); // Retorna a lista de DTOs
     }
 }
