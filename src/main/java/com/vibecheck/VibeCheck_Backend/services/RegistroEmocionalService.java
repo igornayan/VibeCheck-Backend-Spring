@@ -19,15 +19,18 @@ public class RegistroEmocionalService {
     private final RegistroEmocionalRepository registroRepository;
     private final CodigoAvaliacaoRepository codigoRepository;
     private final AlunoRepository alunoRepository;
+    private final PraticaService praticaService;
 
     @Autowired
     public RegistroEmocionalService(
             RegistroEmocionalRepository registroRepository,
             CodigoAvaliacaoRepository codigoRepository,
-            AlunoRepository alunoRepository) {
+            AlunoRepository alunoRepository,
+            PraticaService praticaService) {
         this.registroRepository = registroRepository;
         this.codigoRepository = codigoRepository;
         this.alunoRepository = alunoRepository;
+        this.praticaService = praticaService;
     }
 
     /**
@@ -69,7 +72,12 @@ public class RegistroEmocionalService {
         registro.setTurma(codigoAvaliacao.getTurma());
 
         // Salva o registro no banco de dados
-        return registroRepository.save(registro);
+        RegistroEmocional registroSalvo = registroRepository.save(registro);
+        
+        // Vincula o registro à prática (abre ou fecha conforme o tipo)
+        praticaService.vincularRegistro(registroSalvo);
+        
+        return registroSalvo;
     }
 
     /**
