@@ -2,9 +2,13 @@
 package com.vibecheck.VibeCheck_Backend.services;
 
 // Importações necessárias.
+import com.vibecheck.VibeCheck_Backend.dtos.PraticaResumoDTO;
 import com.vibecheck.VibeCheck_Backend.models.*;
 import com.vibecheck.VibeCheck_Backend.repositories.PraticaRepository;
+import com.vibecheck.VibeCheck_Backend.strategies.PraticaListagemContext;
+import com.vibecheck.VibeCheck_Backend.strategies.PraticaListagemInterface.TipoEstrategia;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,30 +16,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Serviço responsável pela lógica de negócio relacionada às práticas.
- * Gerencia a criação, abertura e fechamento de práticas baseadas nos registros emocionais.
- */
 @Service
 public class PraticaService {
 
     private final PraticaRepository praticaRepository;
+    private final PraticaListagemContext praticaListagemContext;
 
-    /**
-     * Injeção de dependência via construtor (prática recomendada).
-     * 
-     * @param praticaRepository Repositório para operações com práticas.
-     */
     @Autowired
-    public PraticaService(PraticaRepository praticaRepository) {
+    public PraticaService(PraticaRepository praticaRepository, PraticaListagemContext praticaListagemContext) {
         this.praticaRepository = praticaRepository;
+        this.praticaListagemContext = praticaListagemContext;
     }
 
-    /**
-     * Vincula um registro emocional a uma prática, abrindo ou fechando conforme o tipo.
-     * 
-     * @param registro O registro emocional a ser vinculado.
-     */
     @Transactional
     public void vincularRegistro(RegistroEmocional registro) {
         if (registro.getTipoSubmissao() == TipoAvaliacao.CHECKIN) {
@@ -45,11 +37,6 @@ public class PraticaService {
         }
     }
 
-    /**
-     * Abre uma nova prática com um registro de check-in.
-     * 
-     * @param checkinRegistro O registro de check-in que inicia a prática.
-     */
     @Transactional
     public Pratica abrirPratica(RegistroEmocional checkinRegistro) {
         // Verifica se já existe uma prática aberta para este aluno nesta turma
@@ -80,12 +67,6 @@ public class PraticaService {
         return praticaRepository.save(novaPratica);
     }
 
-    /**
-     * Fecha uma prática aberta com um registro de check-out.
-     * 
-     * @param checkoutRegistro O registro de check-out que finaliza a prática.
-     * @return A prática fechada, ou null se não encontrar prática aberta.
-     */
     @Transactional
     public Pratica fecharPratica(RegistroEmocional checkoutRegistro) {
         Optional<Pratica> praticaAberta = praticaRepository
@@ -105,98 +86,45 @@ public class PraticaService {
         return null;
     }
 
-    /**
-     * Busca todas as práticas de um aluno.
-     * 
-     * @param aluno O aluno para buscar as práticas.
-     * @return Lista de práticas do aluno.
-     */
-    public List<Pratica> buscarPraticasPorAluno(Aluno aluno) {
-        return praticaRepository.findByAlunoOrderByInicioDesc(aluno);
-    }
+    // ========== MÉTODOS DE BUSCA BÁSICOS (USADOS PELO CONTROLLER) ==========
 
-    /**
-     * Busca todas as práticas de uma turma.
-     * 
-     * @param turma A turma para buscar as práticas.
-     * @return Lista de práticas da turma.
-     */
-    public List<Pratica> buscarPraticasPorTurma(Turma turma) {
-        return praticaRepository.findByTurmaOrderByInicioDesc(turma);
-    }
-
-    /**
-     * Busca práticas de um aluno em um período específico.
-     * 
-     * @param aluno O aluno para buscar as práticas.
-     * @param inicio Data de início do período.
-     * @param fim Data de fim do período.
-     * @return Lista de práticas do aluno no período.
-     */
-    public List<Pratica> buscarPraticasPorAlunoEPeriodo(Aluno aluno, LocalDateTime inicio, LocalDateTime fim) {
-        return praticaRepository.findByAlunoAndInicioBetween(aluno, inicio, fim);
-    }
-
-    /**
-     * Busca práticas de uma turma em um período específico.
-     * 
-     * @param turma A turma para buscar as práticas.
-     * @param inicio Data de início do período.
-     * @param fim Data de fim do período.
-     * @return Lista de práticas da turma no período.
-     */
-    public List<Pratica> buscarPraticasPorTurmaEPeriodo(Turma turma, LocalDateTime inicio, LocalDateTime fim) {
-        return praticaRepository.findByTurmaAndInicioBetween(turma, inicio, fim);
-    }
-
-    /**
-     * Busca todas as práticas abertas de uma turma.
-     * 
-     * @param turma A turma para buscar as práticas abertas.
-     * @return Lista de práticas abertas da turma.
-     */
-    public List<Pratica> buscarPraticasAbertasPorTurma(Turma turma) {
-        return praticaRepository.findByTurmaAndCheckoutIsNullOrderByInicioDesc(turma);
-    }
-
-    /**
-     * Busca todas as práticas abertas de um aluno.
-     * 
-     * @param aluno O aluno para buscar as práticas abertas.
-     * @return Lista de práticas abertas do aluno.
-     */
-    public List<Pratica> buscarPraticasAbertasPorAluno(Aluno aluno) {
-        return praticaRepository.findByAlunoAndCheckoutIsNullOrderByInicioDesc(aluno);
-    }
-
-    /**
-     * Busca uma prática por ID.
-     * 
-     * @param id O ID da prática.
-     * @return Optional contendo a prática, ou vazio se não encontrada.
-     */
     public Optional<Pratica> buscarPorId(Long id) {
         return praticaRepository.findById(id);
     }
 
-    /**
-     * Busca práticas de um aluno com informações detalhadas.
-     * 
-     * @param alunoId ID do aluno.
-     * @return Lista de práticas com dados do aluno e turma carregados.
-     */
-    public List<Pratica> buscarPraticasPorAlunoComDetalhes(Long alunoId) {
-        return praticaRepository.findByAlunoWithDetails(alunoId);
+    public List<Pratica> buscarPraticasPorAlunoEPeriodo(Aluno aluno, LocalDateTime inicio, LocalDateTime fim) {
+        return praticaRepository.findByAlunoAndInicioBetween(aluno, inicio, fim);
     }
 
-    /**
-     * Busca práticas de uma turma com informações detalhadas.
-     * 
-     * @param turmaId ID da turma.
-     * @return Lista de práticas com dados do aluno e turma carregados.
-     */
-    public List<Pratica> buscarPraticasPorTurmaComDetalhes(Long turmaId) {
-        return praticaRepository.findByTurmaWithDetails(turmaId);
+    // ========== MÉTODOS QUE UTILIZAM STRATEGY PATTERN ==========
+
+    public List<PraticaResumoDTO> listarPraticas(TipoEstrategia tipoEstrategia, 
+                                                Long turmaId, 
+                                                Turma turma, 
+                                                Aluno aluno, 
+                                                LocalDateTime inicio, 
+                                                LocalDateTime fim, 
+                                                OAuth2AuthenticationToken authentication) {
+        return praticaListagemContext.executarEstrategia(tipoEstrategia, turmaId, turma, aluno, inicio, fim, authentication);
+    }
+
+    public List<PraticaResumoDTO> listarTodasPraticas() {
+        return listarPraticas(TipoEstrategia.TODAS_PRATICAS, null, null, null, null, null, null);
+    }
+
+    public List<PraticaResumoDTO> listarPraticasPorTurma(Long turmaId) {
+        return listarPraticas(TipoEstrategia.POR_TURMA, turmaId, null, null, null, null, null);
+    }
+
+    public List<PraticaResumoDTO> listarPraticasAbertasPorTurma(Long turmaId, Turma turma) {
+        return listarPraticas(TipoEstrategia.ABERTAS_POR_TURMA, turmaId, turma, null, null, null, null);
+    }
+
+    public List<PraticaResumoDTO> listarMinhasPraticasAbertas(Aluno aluno, OAuth2AuthenticationToken authentication) {
+        return listarPraticas(TipoEstrategia.MINHAS_ABERTAS, null, null, aluno, null, null, authentication);
+    }
+
+    public List<PraticaResumoDTO> listarPraticasPorTurmaEPeriodo(Long turmaId, Turma turma, LocalDateTime inicio, LocalDateTime fim) {
+        return listarPraticas(TipoEstrategia.POR_TURMA_PERIODO, turmaId, turma, null, inicio, fim, null);
     }
 }
-

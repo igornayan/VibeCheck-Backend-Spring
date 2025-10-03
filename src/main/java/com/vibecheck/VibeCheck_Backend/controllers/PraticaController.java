@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * @RestController: Define esta classe como um controlador de API REST.
@@ -58,10 +57,7 @@ public class PraticaController {
     @GetMapping
     @PreAuthorize("hasRole('PROFESSOR')")
     public ResponseEntity<List<PraticaResumoDTO>> listarTodas() {
-        List<Pratica> praticas = praticaService.buscarPraticasPorTurmaComDetalhes(1L); // TODO: Implementar busca por todas as turmas do professor
-        List<PraticaResumoDTO> dtos = praticas.stream()
-                .map(PraticaResumoDTO::new)
-                .collect(Collectors.toList());
+        List<PraticaResumoDTO> dtos = praticaService.listarTodasPraticas();
         return ResponseEntity.ok(dtos);
     }
 
@@ -95,10 +91,7 @@ public class PraticaController {
         turmaRepository.findById(turmaId)
                 .orElseThrow(() -> new RuntimeException("Turma não encontrada."));
         
-        List<Pratica> praticas = praticaService.buscarPraticasPorTurmaComDetalhes(turmaId);
-        List<PraticaResumoDTO> dtos = praticas.stream()
-                .map(PraticaResumoDTO::new)
-                .collect(Collectors.toList());
+        List<PraticaResumoDTO> dtos = praticaService.listarPraticasPorTurma(turmaId);
         return ResponseEntity.ok(dtos);
     }
 
@@ -115,10 +108,7 @@ public class PraticaController {
         Turma turma = turmaRepository.findById(turmaId)
                 .orElseThrow(() -> new RuntimeException("Turma não encontrada."));
         
-        List<Pratica> praticas = praticaService.buscarPraticasAbertasPorTurma(turma);
-        List<PraticaResumoDTO> dtos = praticas.stream()
-                .map(PraticaResumoDTO::new)
-                .collect(Collectors.toList());
+        List<PraticaResumoDTO> dtos = praticaService.listarPraticasAbertasPorTurma(turmaId, turma);
         return ResponseEntity.ok(dtos);
     }
 
@@ -136,10 +126,7 @@ public class PraticaController {
         Aluno aluno = alunoRepository.findByGoogleId(googleId)
                 .orElseThrow(() -> new RuntimeException("Aluno não encontrado."));
         
-        List<Pratica> praticas = praticaService.buscarPraticasAbertasPorAluno(aluno);
-        List<PraticaResumoDTO> dtos = praticas.stream()
-                .map(PraticaResumoDTO::new)
-                .collect(Collectors.toList());
+        List<PraticaResumoDTO> dtos = praticaService.listarMinhasPraticasAbertas(aluno, authentication);
         return ResponseEntity.ok(dtos);
     }
 
@@ -165,7 +152,7 @@ public class PraticaController {
         List<Pratica> praticas = praticaService.buscarPraticasPorAlunoEPeriodo(aluno, inicio, fim);
         List<PraticaResumoDTO> dtos = praticas.stream()
                 .map(PraticaResumoDTO::new)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 
@@ -188,10 +175,7 @@ public class PraticaController {
         Turma turma = turmaRepository.findById(turmaId)
                 .orElseThrow(() -> new RuntimeException("Turma não encontrada."));
         
-        List<Pratica> praticas = praticaService.buscarPraticasPorTurmaEPeriodo(turma, inicio, fim);
-        List<PraticaResumoDTO> dtos = praticas.stream()
-                .map(PraticaResumoDTO::new)
-                .collect(Collectors.toList());
+        List<PraticaResumoDTO> dtos = praticaService.listarPraticasPorTurmaEPeriodo(turmaId, turma, inicio, fim);
         return ResponseEntity.ok(dtos);
     }
 }
