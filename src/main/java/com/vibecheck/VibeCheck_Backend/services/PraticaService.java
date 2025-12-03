@@ -29,20 +29,11 @@ public class PraticaService {
     }
 
     @Transactional
-    public void vincularRegistro(RegistroEmocional registro) {
-        if (registro.getTipoSubmissao() == TipoAvaliacao.CHECKIN) {
-            abrirPratica(registro);
-        } else if (registro.getTipoSubmissao() == TipoAvaliacao.CHECKOUT) {
-            fecharPratica(registro);
-        }
-    }
-
-    @Transactional
     public Pratica abrirPratica(RegistroEmocional checkinRegistro) {
         // Verifica se já existe uma prática aberta para este aluno nesta turma
         Optional<Pratica> praticaAberta = praticaRepository
                 .findFirstByAlunoAndTurmaAndCheckoutIsNullOrderByInicioDesc(
-                        checkinRegistro.getAluno(), 
+                        checkinRegistro.getAluno(),
                         checkinRegistro.getTurma()
                 );
 
@@ -56,7 +47,7 @@ public class PraticaService {
             checkoutVirtual.setTimestamp(LocalDateTime.now());
             checkoutVirtual.setEmocao(checkinRegistro.getEmocao()); // Usa a mesma emoção
             checkoutVirtual.setTipoSubmissao(TipoAvaliacao.CHECKOUT);
-            
+
             praticaExistente.fechar(checkoutVirtual);
             praticaRepository.save(praticaExistente);
         }
@@ -71,7 +62,7 @@ public class PraticaService {
     public Pratica fecharPratica(RegistroEmocional checkoutRegistro) {
         Optional<Pratica> praticaAberta = praticaRepository
                 .findFirstByAlunoAndTurmaAndCheckoutIsNullOrderByInicioDesc(
-                        checkoutRegistro.getAluno(), 
+                        checkoutRegistro.getAluno(),
                         checkoutRegistro.getTurma()
                 );
 
@@ -80,7 +71,7 @@ public class PraticaService {
             pratica.fechar(checkoutRegistro);
             return praticaRepository.save(pratica);
         }
-        
+
         // Se não encontrar prática aberta, pode criar uma prática "isolada" ou ignorar
         // Por enquanto, vamos ignorar para manter a consistência
         return null;

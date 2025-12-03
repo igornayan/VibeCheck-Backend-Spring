@@ -1,5 +1,8 @@
 package com.vibecheck.VibeCheck_Backend.services;
 
+import com.vibecheck.VibeCheck_Backend.commands.AbrirPraticaCommand;
+import com.vibecheck.VibeCheck_Backend.commands.FecharPraticaCommand;
+import com.vibecheck.VibeCheck_Backend.commands.PraticaCommandInterface;
 import com.vibecheck.VibeCheck_Backend.models.*;
 import com.vibecheck.VibeCheck_Backend.repositories.*;
 import com.vibecheck.VibeCheck_Backend.dtos.DashboardRegistroDTO;
@@ -73,9 +76,22 @@ public class RegistroEmocionalService {
 
         // Salva o registro no banco de dados
         RegistroEmocional registroSalvo = registroRepository.save(registro);
-        
-        // Vincula o registro à prática (abre ou fecha conforme o tipo)
-        praticaService.vincularRegistro(registroSalvo);
+
+        // Usa o Padrão Command
+        PraticaCommandInterface command;
+        if (tipo == TipoAvaliacao.CHECKIN) {
+            // Cria o comando de Checkin, passando o Receiver e o payload
+            command = new AbrirPraticaCommand(praticaService, registroSalvo);
+        } else if (tipo == TipoAvaliacao.CHECKOUT) {
+            // Cria o comando de Checkout, passando o Receiver e o payload
+            command = new FecharPraticaCommand(praticaService, registroSalvo);
+        } else {
+            throw new IllegalArgumentException("Tipo de avaliação não suportado: " + tipo);
+        }
+
+        // Executa o comando. O RegistroEmocionalService agora apenas invoca o Command,
+        // sem saber a implementação de 'abrir' ou 'fechar'.
+        command.executar();
         
         return registroSalvo;
     }
